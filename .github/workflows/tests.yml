@@ -1,0 +1,31 @@
+name: Tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Verify hook dependencies and syntax
+        run: |
+          command -v jq
+          bash -n muse-inbox.sh
+      - name: Broker, helper, configuration and round-trip contracts
+        run: python -m unittest discover -s . -p 'test_*.py' -v
+      - name: Pinned installer contracts
+        run: python -m unittest discover -s integration -p 'test_*.py' -v
+      - name: Router and DSH integration contracts
+        run: node --test client/*.test.mjs integration/test_*.mjs
